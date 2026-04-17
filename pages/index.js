@@ -32,17 +32,26 @@ export default function Home() {
   const [rival, setRival] = useState("");
   const [resultado, setResultado] = useState("");
 
- function analizar() {
+function analizar() {
   const r = rival.toLowerCase().replace(/\s/g, "");
 
+  let mejorMatch = null;
+  let mejorScore = 0;
+
   for (let poke in meta) {
-    if (r.includes(poke)) {
-      setResultado(meta[poke].respuesta);
-      return;
+    const score = similitud(r, poke);
+
+    if (score > mejorScore) {
+      mejorScore = score;
+      mejorMatch = poke;
     }
   }
 
-  setResultado("👉 No reconocido: juega estándar y controla velocidad");
+  if (mejorScore > 0.5) {
+    setResultado(meta[mejorMatch].respuesta);
+  } else {
+    setResultado("👉 No reconocido: juega estándar y controla velocidad");
+  }
 }
   return (
     <div style={{ padding: 20 }}>
