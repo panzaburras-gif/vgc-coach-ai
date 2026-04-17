@@ -5,18 +5,22 @@ export default function Home() {
   const [resultado, setResultado] = useState("");
 
   function analizar() {
-    if (rival.toLowerCase().includes("whimsicott")) {
-      setResultado("👉 Haz focus a Whimsicott para evitar Tailwind");
-    } else if (rival.toLowerCase().includes("sneasler")) {
-      setResultado("👉 Cuidado con Sneasler, puede hacer snowball rápido");
+    const r = rival.toLowerCase();
+
+    if (r.includes("whimsicott")) {
+      setResultado("👉 Prioridad: eliminar Whimsicott para evitar Tailwind");
+    } else if (r.includes("sneasler")) {
+      setResultado("👉 Sneasler amenaza: usa Intimidate o presión inmediata");
+    } else if (r.includes("flutter mane")) {
+      setResultado("👉 Flutter Mane: cuidado con speed, usa prioridad o bulk");
     } else {
-      setResultado("👉 Juega estándar: posicionamiento y control de velocidad");
+      setResultado("👉 Juega estándar: controla velocidad y posicionamiento");
     }
   }
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>VGC Coach IA</h1>
+      <h1>🔥 VGC Coach IA</h1>
 
       <input
         placeholder="Escribe Pokémon rival"
