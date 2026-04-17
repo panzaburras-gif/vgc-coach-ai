@@ -4,7 +4,7 @@ export default function Home() {
   const [rival, setRival] = useState("");
   const [resultado, setResultado] = useState("");
 
-  function analizar() {
+ function analizar() {
   const r = rival.toLowerCase();
 
   if (r.includes("whim") || r.includes("cotti")) {
