@@ -5,19 +5,18 @@ export default function Home() {
   const [resultado, setResultado] = useState("");
 
   function analizar() {
-    const r = rival.toLowerCase();
+  const r = rival.toLowerCase();
 
-    if (r.includes("whimsicott")) {
-      setResultado("👉 Prioridad: eliminar Whimsicott para evitar Tailwind");
-    } else if (r.includes("sneasler")) {
-      setResultado("👉 Sneasler amenaza: usa Intimidate o presión inmediata");
-    } else if (r.includes("flutter mane")) {
-      setResultado("👉 Flutter Mane: cuidado con speed, usa prioridad o bulk");
-    } else {
-      setResultado("👉 Juega estándar: controla velocidad y posicionamiento");
-    }
+  if (r.includes("whim") || r.includes("cotti")) {
+    setResultado("👉 Prioridad: eliminar Whimsicott para evitar Tailwind");
+  } else if (r.includes("snea")) {
+    setResultado("👉 Sneasler amenaza: usa Intimidate o presión inmediata");
+  } else if (r.includes("flutter") || r.includes("mane")) {
+    setResultado("👉 Flutter Mane: cuidado con speed, usa prioridad o bulk");
+  } else {
+    setResultado("👉 Juega estándar: controla velocidad y posicionamiento");
   }
-
+}
   return (
     <div style={{ padding: 20 }}>
       <h1>🔥 VGC Coach IA</h1>
