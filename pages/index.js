@@ -33,17 +33,16 @@ export default function Home() {
   const [resultado, setResultado] = useState("");
 
  function analizar() {
-  const r = rival.toLowerCase();
+  const r = rival.toLowerCase().replace(/\s/g, "");
 
-  if (r.includes("whim") || r.includes("cotti")) {
-    setResultado("👉 Prioridad: eliminar Whimsicott para evitar Tailwind");
-  } else if (r.includes("snea")) {
-    setResultado("👉 Sneasler amenaza: usa Intimidate o presión inmediata");
-  } else if (r.includes("flutter") || r.includes("mane")) {
-    setResultado("👉 Flutter Mane: cuidado con speed, usa prioridad o bulk");
-  } else {
-    setResultado("👉 Juega estándar: controla velocidad y posicionamiento");
+  for (let poke in meta) {
+    if (r.includes(poke)) {
+      setResultado(meta[poke].respuesta);
+      return;
+    }
   }
+
+  setResultado("👉 No reconocido: juega estándar y controla velocidad");
 }
   return (
     <div style={{ padding: 20 }}>
