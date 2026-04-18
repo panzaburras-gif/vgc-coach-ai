@@ -46,6 +46,21 @@ export default function Home() {
 function analizar() {
   const r = rival.toLowerCase().replace(/\s/g, "");
 
+  // 1. Primero intenta detectar por "keys" (rápido y fiable)
+  for (let poke in meta) {
+    const data = meta[poke];
+
+    if (data.keys) {
+      for (let key of data.keys) {
+        if (r.includes(key)) {
+          setResultado(data.respuesta);
+          return;
+        }
+      }
+    }
+  }
+
+  // 2. Si no encuentra nada → usa similitud (IA)
   let mejorMatch = null;
   let mejorScore = 0;
 
@@ -58,7 +73,7 @@ function analizar() {
     }
   }
 
-  if (mejorScore > 0.5) {
+  if (mejorScore > 0.4) {
     setResultado(meta[mejorMatch].respuesta);
   } else {
     setResultado("👉 No reconocido: juega estándar y controla velocidad");
