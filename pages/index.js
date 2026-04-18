@@ -1,39 +1,15 @@
 import { useState } from "react";
 
 const meta = {
-  incineroar: {
-    keys: ["inci", "incin", "incineroar"]
-  },
-  charizard: {
-    keys: ["char", "chari", "zard", "charizard"]
-  },
-  sneasler: {
-    keys: ["snea", "sneas", "sneasler"]
-  },
-  sinistcha: {
-    keys: ["sini", "sinis", "sinistcha"]
-  },
-  gengar: {
-    keys: ["geng", "genga", "gengar"]
-  },
-  floette: {
-    keys: ["floe", "floet", "floette"]
-  },
-  tyranitar: {
-    keys: ["tyra", "tyran", "ttar", "tyranitar"]
-  },
-  pelipper: {
-    keys: ["peli", "pelip", "pelipper"]
-  },
-  garchomp: {
-    keys: ["garch", "chomp", "garchomp"]
-  },
-  whimsicott: {
-    keys: ["whim", "cotti", "whimsicott"]
-  }
+  incineroar: { keys: ["inci", "incin", "incineroar"] },
+  charizard: { keys: ["char", "chari", "zard", "charizard"] },
+  sneasler: { keys: ["snea", "sneas", "sneasler"] },
+  tyranitar: { keys: ["tyra", "tyran", "ttar", "tyranitar"] },
+  pelipper: { keys: ["peli", "pelip", "pelipper"] },
+  garchomp: { keys: ["garch", "chomp", "garchomp"] },
+  whimsicott: { keys: ["whim", "cotti", "whimsicott"] }
 };
 
-// 🔥 IA de similitud PRO
 function similitud(a, b) {
   const dp = Array.from({ length: a.length + 1 }, () =>
     Array(b.length + 1).fill(0)
@@ -63,10 +39,11 @@ function similitud(a, b) {
 export default function Home() {
   const [rival, setRival] = useState("");
   const [resultado, setResultado] = useState("");
+  const [turno, setTurno] = useState(0);
+  const [equipo, setEquipo] = useState([]);
 
-  function analizar() {
+  function detectarEquipo() {
     const palabras = rival.toLowerCase().trim().split(/\s+/);
-
     let detectados = [];
 
     for (let palabra of palabras) {
@@ -76,7 +53,6 @@ export default function Home() {
       for (let poke in meta) {
         const data = meta[poke];
 
-        // 🔥 keys (rápido)
         for (let key of data.keys) {
           if (palabra.includes(key)) {
             mejorMatch = poke;
@@ -84,7 +60,6 @@ export default function Home() {
           }
         }
 
-        // 🔥 similitud (por si escribes mal)
         const score = similitud(palabra, poke);
         if (score > mejorScore) {
           mejorScore = score;
@@ -97,54 +72,68 @@ export default function Home() {
       }
     }
 
-    // 🔥 máximo 4 Pokémon
-    detectados = detectados.slice(0, 4);
+    return detectados.slice(0, 4);
+  }
 
-    const equipo = detectados;
+  function iniciarCombate() {
+    const eq = detectarEquipo();
+    setEquipo(eq);
+    setTurno(1);
 
-    // 🔥 CHARIZARD CORE
-    if (equipo.includes("charizard") && equipo.includes("whimsicott")) {
+    if (eq.includes("charizard") && eq.includes("whimsicott")) {
       setResultado(
-        "🔥 Charizard + Whimsicott\n👉 Lead: Tyranitar + Rotom\n👉 Fake Out + Electroweb\n👉 Evita Tailwind y sol"
+        "🔥 Turno 1\n👉 Lead: Tyranitar + Rotom\n👉 Fake Out a Whimsicott + Electroweb"
       );
       return;
     }
 
-    // 🔥 LLUVIA
-    if (equipo.includes("pelipper")) {
+    setResultado("🔥 Turno 1\n👉 Lead estándar: Incineroar + Rotom");
+  }
+
+  function siguienteTurno() {
+    if (turno === 1) {
+      setTurno(2);
+
       setResultado(
-        "🔥 Lluvia\n👉 Rotom + Tyranitar\n👉 Cambia clima\n👉 Controla velocidad"
+        "🔥 Turno 2\n👉 Si Tailwind activo: protege + reposiciona\n👉 Si no: presión ofensiva"
       );
       return;
     }
 
-    // 🔥 SNEASLER
-    if (equipo.includes("sneasler")) {
+    if (turno === 2) {
+      setTurno(3);
+
       setResultado(
-        "🔥 Sneasler\n👉 Incineroar\n👉 Fake Out turno 1\n👉 Evita snowball"
+        "🔥 Turno 3\n👉 Empieza a cerrar partida\n👉 Busca KO clave"
       );
       return;
     }
 
-    // 🔥 DEFAULT
-    setResultado(
-      "👉 Incineroar + Rotom\n👉 Fake Out + posicionamiento\n👉 Juego estándar"
-    );
+    setResultado("👉 Sigue presionando y adapta según el rival");
+  }
+
+  function reset() {
+    setTurno(0);
+    setEquipo([]);
+    setResultado("");
+    setRival("");
   }
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>🔥 VGC Coach IA</h1>
+      <h1>🔥 VGC Coach IA PRO</h1>
 
       <input
-        placeholder="Escribe Pokémon rival"
+        placeholder="Equipo rival"
         value={rival}
         onChange={(e) => setRival(e.target.value)}
       />
 
       <br /><br />
 
-      <button onClick={analizar}>Analizar turno</button>
+      <button onClick={iniciarCombate}>Iniciar combate</button>
+      <button onClick={siguienteTurno}>Siguiente turno</button>
+      <button onClick={reset}>Reset</button>
 
       <p>{resultado}</p>
     </div>
