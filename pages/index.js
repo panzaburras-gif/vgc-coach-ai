@@ -1,170 +1,132 @@
 import { useState } from "react";
 
-const meta = {
-  incineroar: { keys: ["inci", "incin", "incineroar"] },
-  charizard: { keys: ["char", "chari", "zard", "charizard"] },
-  sneasler: { keys: ["snea", "sneas", "sneasler"] },
-  tyranitar: { keys: ["tyra", "tyran", "ttar", "tyranitar"] },
-  pelipper: { keys: ["peli", "pelip", "pelipper"] },
-  garchomp: { keys: ["garch", "chomp", "garchomp"] },
-  whimsicott: { keys: ["whim", "cotti", "whimsicott"] }
+const sprites = {
+  incineroar: "https://img.pokemondb.net/sprites/home/normal/incineroar.png",
+  rotom: "https://img.pokemondb.net/sprites/home/normal/rotom.png",
+  tyranitar: "https://img.pokemondb.net/sprites/home/normal/tyranitar.png",
+  sneasler: "https://img.pokemondb.net/sprites/home/normal/sneasler.png",
+  whimsicott: "https://img.pokemondb.net/sprites/home/normal/whimsicott.png",
+  charizard: "https://img.pokemondb.net/sprites/home/normal/charizard.png",
+  pelipper: "https://img.pokemondb.net/sprites/home/normal/pelipper.png"
 };
 
-function similitud(a, b) {
-  const dp = Array.from({ length: a.length + 1 }, () =>
-    Array(b.length + 1).fill(0)
-  );
+export default function BattleUI() {
+  const [rival, setRival] = useState([
+    { name: "sneasler", hp: 100 },
+    { name: "whimsicott", hp: 100 }
+  ]);
 
-  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  const [player, setPlayer] = useState([
+    { name: "incineroar", hp: 100 },
+    { name: "rotom", hp: 100 }
+  ]);
 
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+  const [target, setTarget] = useState(0);
+  const [log, setLog] = useState([]);
 
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
-    }
+  function damage(amount) {
+    setRival(prev => {
+      const updated = [...prev];
+      updated[target].hp = Math.max(0, updated[target].hp - amount);
+      return updated;
+    });
   }
 
-  const distancia = dp[a.length][b.length];
-  const maxLen = Math.max(a.length, b.length);
-
-  return 1 - distancia / maxLen;
-}
-
-export default function Home() {
-  const [rival, setRival] = useState("");
-  const [info, setInfo] = useState("");
-  const [resultado, setResultado] = useState("");
-  const [turno, setTurno] = useState(0);
-  const [equipo, setEquipo] = useState([]);
-
-  function detectarEquipo() {
-    const palabras = rival.toLowerCase().split(" ");
-    let detectados = [];
-
-    for (let palabra of palabras) {
-      let mejorMatch = null;
-      let mejorScore = 0;
-
-      for (let poke in meta) {
-        const data = meta[poke];
-
-        for (let key of data.keys) {
-          if (palabra.includes(key)) {
-            mejorMatch = poke;
-            mejorScore = 1;
-          }
-        }
-
-        const score = similitud(palabra, poke);
-        if (score > mejorScore) {
-          mejorScore = score;
-          mejorMatch = poke;
-        }
-      }
-
-      if (mejorMatch && !detectados.includes(mejorMatch)) {
-        detectados.push(mejorMatch);
-      }
-    }
-
-    return detectados.slice(0, 4);
+  function action(text) {
+    setLog(prev => [text, ...prev]);
   }
 
-  function iniciar() {
-    const eq = detectarEquipo();
-    setEquipo(eq);
-    setTurno(1);
+  function fakeOut() {
+    damage(30);
+    action(`Incineroar usa Fake Out → ${rival[target].name}`);
+  }
 
-    setResultado(
-      "🔥 Turno 1\n👉 Lead: Incineroar + Rotom\n👉 Fake Out + control de velocidad"
+  function electroweb() {
+    damage(25);
+    action(`Rotom usa Electroweb → ${rival[target].name}`);
+  }
+
+  function rockslide() {
+    setRival(prev =>
+      prev.map(p => ({ ...p, hp: Math.max(0, p.hp - 20) }))
     );
-  }
-
-  function adaptar() {
-    const i = info.toLowerCase();
-
-    if (i.includes("protect")) {
-      setResultado(
-        "🧠 Detectado Protect\n👉 Dobla target turno siguiente\n👉 Gana momentum"
-      );
-      return;
-    }
-
-    if (i.includes("murio") || i.includes("muerto")) {
-      setResultado(
-        "💀 Has perdido un Pokémon\n👉 Reposiciona\n👉 Busca control de velocidad"
-      );
-      return;
-    }
-
-    if (i.includes("tailwind")) {
-      setResultado(
-        "💨 Tailwind activo\n👉 Protege y stall\n👉 No intercambies KOs"
-      );
-      return;
-    }
-
-    if (i.includes("fake out")) {
-      setResultado(
-        "👊 Fake Out detectado\n👉 Ahora tienes turno libre\n👉 Presión máxima"
-      );
-      return;
-    }
-
-    setResultado(
-      "🤔 No claro\n👉 Juega seguro\n👉 Prioriza posicionamiento"
-    );
-  }
-
-  function siguienteTurno() {
-    setTurno(turno + 1);
-
-    setResultado(
-      "➡️ Turno " + (turno + 1) + "\n👉 Evalúa estado y aplica presión"
-    );
-  }
-
-  function reset() {
-    setTurno(0);
-    setEquipo([]);
-    setResultado("");
-    setRival("");
-    setInfo("");
+    action("Tyranitar usa Rock Slide (daño en área)");
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>🔥 VGC Coach IA REAL</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">🎮 Combate VGC Real</h1>
 
-      <input
-        placeholder="Equipo rival"
-        value={rival}
-        onChange={(e) => setRival(e.target.value)}
-      />
+      {/* RIVAL */}
+      <div className="mb-6">
+        <h2 className="font-semibold">Rival (elige objetivo)</h2>
+        <div className="flex gap-6">
+          {rival.map((p, i) => (
+            <div
+              key={i}
+              onClick={() => setTarget(i)}
+              className={`cursor-pointer p-2 rounded-xl ${
+                target === i ? "bg-yellow-200" : ""
+              }`}
+            >
+              <img src={sprites[p.name]} className="w-24" />
+              <p className="text-center">❤️ {p.hp}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <br /><br />
+      {/* PLAYER */}
+      <div className="mb-6">
+        <h2 className="font-semibold">Tu equipo</h2>
+        <div className="flex gap-6">
+          {player.map((p, i) => (
+            <div key={i}>
+              <img src={sprites[p.name]} className="w-24" />
+              <p className="text-center">❤️ {p.hp}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <button onClick={iniciar}>Iniciar combate</button>
-      <button onClick={siguienteTurno}>Siguiente turno</button>
-      <button onClick={reset}>Reset</button>
+      {/* BOTONES */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <button
+          onClick={fakeOut}
+          className="bg-red-500 text-white p-3 rounded-2xl"
+        >
+          Fake Out
+        </button>
 
-      <br /><br />
+        <button
+          onClick={electroweb}
+          className="bg-blue-500 text-white p-3 rounded-2xl"
+        >
+          Electroweb
+        </button>
 
-      <input
-        placeholder="Qué ha pasado (ej: protect, murió rotom...)"
-        value={info}
-        onChange={(e) => setInfo(e.target.value)}
-      />
+        <button
+          onClick={rockslide}
+          className="bg-gray-700 text-white p-3 rounded-2xl"
+        >
+          Rock Slide
+        </button>
 
-      <button onClick={adaptar}>Adaptar IA</button>
+        <button
+          onClick={() => action("Protect usado")}
+          className="bg-green-500 text-white p-3 rounded-2xl"
+        >
+          Protect
+        </button>
+      </div>
 
-      <p>{resultado}</p>
+      {/* LOG */}
+      <div>
+        <h2 className="font-semibold">Historial</h2>
+        {log.map((l, i) => (
+          <div key={i}>• {l}</div>
+        ))}
+      </div>
     </div>
   );
 }
