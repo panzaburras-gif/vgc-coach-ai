@@ -52,7 +52,7 @@ export default function Home() {
   const [resultado, setResultado] = useState("");
 
 function analizar() {
-  const palabras = rival.toLowerCase().split(" ");
+  const palabras = rival.toLowerCase().trim().split(/\s+/);
 
   let detectados = [];
 
@@ -61,25 +61,15 @@ function analizar() {
     let mejorScore = 0;
 
     for (let poke in meta) {
-      const data = meta[poke];
-
-      // keys rápidas
-      for (let key of data.keys || []) {
-        if (palabra.includes(key)) {
-          mejorMatch = poke;
-          mejorScore = 1;
-        }
-      }
-
-      // similitud
       const score = similitud(palabra, poke);
+
       if (score > mejorScore) {
         mejorScore = score;
         mejorMatch = poke;
       }
     }
 
-    if (mejorMatch && !detectados.includes(mejorMatch)) {
+    if (mejorScore > 0.4 && !detectados.includes(mejorMatch)) {
       detectados.push(mejorMatch);
     }
   }
@@ -87,37 +77,33 @@ function analizar() {
   const p1 = detectados[0];
   const p2 = detectados[1];
 
-  // 🔥 CHARIZARD + WHIMSICOTT
+  // 🔥 LÓGICA REAL
+
   if (
     (p1 === "charizard" && p2 === "whimsicott") ||
     (p2 === "charizard" && p1 === "whimsicott")
   ) {
     setResultado(
-      "🔥 Charizard + Whimsicott\n👉 Lead: Tyranitar + Rotom\n👉 Turno 1:\n- Fake Out a Whimsicott\n- Electroweb con Rotom\n👉 Objetivo: evitar Tailwind y quitar sol"
+      "🔥 Charizard + Whimsicott\n👉 Lead: Tyranitar + Rotom\n👉 Fake Out + Electroweb\n👉 Evita Tailwind"
     );
     return;
   }
 
-  // 🔥 SNEASLER
   if (p1 === "sneasler" || p2 === "sneasler") {
     setResultado(
-      "🔥 Sneasler detectado\n👉 Lead: Incineroar\n👉 Turno 1:\n- Fake Out al Sneasler\n👉 Objetivo: evitar snowball"
+      "🔥 Sneasler\n👉 Incineroar lead\n👉 Fake Out turno 1"
     );
     return;
   }
 
-  // 🔥 LLUVIA
   if (p1 === "pelipper" || p2 === "pelipper") {
     setResultado(
-      "🔥 Lluvia detectada\n👉 Lead: Rotom + Tyranitar\n👉 Turno 1:\n- Cambiar clima\n- Presión eléctrica\n👉 Objetivo: cortar lluvia"
+      "🔥 Lluvia\n👉 Rotom + Tyranitar\n👉 Cambia clima"
     );
     return;
   }
 
-  // 🔥 DEFAULT
-  setResultado(
-    "👉 Lead: Incineroar + Rotom\n👉 Turno 1:\n- Fake Out + posicionamiento\n👉 Juego estándar"
-  );
+  setResultado("👉 Incineroar + Rotom | juego estándar");
 }
   return (
     <div style={{ padding: 20 }}>
