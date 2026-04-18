@@ -10,116 +10,172 @@ const YOUR_TEAM = [
   "Floette"
 ];
 
-// 🔥 BASE META
-const META_BEHAVIOR = {
-  Whimsicott: {
-    turn1: { setup: 0.7, protect: 0.1, attack: 0.2, switch: 0 },
-  },
-  Sneasler: {
-    turn1: { attack: 0.6, protect: 0.3, setup: 0.1, switch: 0 },
+// 🔥 META BEHAVIOR
+const META = {
+  Whimsicott: { setup: 0.7, protect: 0.1, attack: 0.2, switch: 0 },
+  Sneasler: { attack: 0.6, protect: 0.3, setup: 0.1, switch: 0 },
+  Charizard: { attack: 0.7, protect: 0.2, setup: 0.1, switch: 0 }
+};
+
+// 🧠 DETECTAR AMENAZAS
+const detectThreats = (team) => {
+  let t = [];
+  if (team.includes("Sneasler")) t.push("Sneasler");
+  if (team.includes("Whimsicott")) t.push("Whimsicott");
+  if (team.includes("Charizard")) t.push("Sun");
+  return t;
+};
+
+// 🧠 LEADS
+const chooseLeads = (threats) => {
+  if (threats.includes("Sneasler") && threats.includes("Whimsicott"))
+    return ["Incineroar", "Aegislash"];
+  if (threats.includes("Sun")) return ["Tyranitar", "Rotom"];
+  return ["Incineroar", "Rotom"];
+};
+
+// 🧠 PLAN
+const buildPlan = (threats) => {
+  if (threats.includes("Sneasler") && threats.includes("Whimsicott")) {
+    return {
+      t1: "Fake Out + Escudo Real",
+      t2: "Cambio a Tyranitar",
+      t3: "Prioridad + presión",
+      note: "Evita Tailwind"
+    };
   }
+  if (threats.includes("Sun")) {
+    return {
+      t1: "Arena + Volt Switch",
+      t2: "Avalancha",
+      t3: "Control clima",
+      note: "Cortar sol"
+    };
+  }
+  return {
+    t1: "Fake Out + Electrotela",
+    t2: "Pivot",
+    t3: "Presión",
+    note: "Juego estándar"
+  };
 };
 
 // 🧠 PREDICCIÓN
-const predictEnemyAction = (pokemon) => {
-  return META_BEHAVIOR[pokemon]?.turn1 || {
+const predict = (pokemon, context) => {
+  let p = META[pokemon] || {
     attack: 0.4,
     protect: 0.3,
     switch: 0.2,
     setup: 0.1
   };
+
+  let res = { ...p };
+
+  if (context.tailwind) res.attack += 0.15;
+  if (context.protectLast) res.protect -= 0.2;
+
+  return res;
 };
 
-// 🎯 DECISIÓN ÓPTIMA
-const getBestMove = (prediction) => {
-  if (prediction.setup > 0.5) return "pressure";
-  if (prediction.protect > 0.4) return "setup";
-  if (prediction.switch > 0.4) return "safe";
-  return "defensive";
+// 🎯 DECISIÓN
+const decide = (p) => {
+  if (p.setup > 0.5) return "🔥 Castiga setup YA";
+  if (p.protect > 0.4) return "🧠 Haz setup o cambia";
+  if (p.switch > 0.4) return "🔄 Movimiento seguro";
+  return "⚔️ Juega defensivo / trade";
 };
 
-// 🧠 ANALIZADOR DE PARTIDA
+// 🧠 ANALIZAR PARTIDA
 const analyzeGame = (history) => {
   let score = 100;
   let mistakes = [];
-  let goodPlays = [];
 
-  history.forEach((turn, i) => {
-    // ❌ ERRORES
-    if (turn.playerMove === "Fake Out" && turn.enemyAction === "protect") {
+  history.forEach((t, i) => {
+    if (t.player === "Fake Out" && t.enemy === "protect") {
       score -= 15;
-      mistakes.push(`Turno ${i + 1}: Fake Out en Protect`);
+      mistakes.push(`Turno ${i + 1}: Fake Out mal usado`);
     }
-
-    if (turn.tailwind && turn.playerMove === "attack") {
+    if (t.tailwind && t.player === "attack") {
       score -= 10;
-      mistakes.push(`Turno ${i + 1}: Peleaste speed bajo Tailwind`);
+      mistakes.push(`Turno ${i + 1}: Speed war mala`);
     }
-
-    if (turn.enemyAction === "setup" && turn.playerMove !== "pressure") {
+    if (t.enemy === "setup" && t.player !== "pressure") {
       score -= 12;
       mistakes.push(`Turno ${i + 1}: No castigaste setup`);
     }
-
-    // ✅ BUENAS JUGADAS
-    if (turn.enemyAction === "setup" && turn.playerMove === "pressure") {
-      score += 8;
-      goodPlays.push(`Turno ${i + 1}: Castigaste setup`);
-    }
-
-    if (turn.enemyAction === "protect" && turn.playerMove === "setup") {
-      score += 6;
-      goodPlays.push(`Turno ${i + 1}: Aprovechaste protect rival`);
-    }
-
-    if (!turn.tailwind && turn.playerMove === "safe") {
-      score += 5;
-      goodPlays.push(`Turno ${i + 1}: Juego seguro correcto`);
-    }
   });
 
-  // Clamp score
-  if (score > 100) score = 100;
-  if (score < 0) score = 0;
+  let level =
+    score > 85
+      ? "🔥 Alto nivel"
+      : score > 70
+      ? "👍 Buen jugador"
+      : score > 50
+      ? "⚠️ Mejorable"
+      : "❌ Errores graves";
 
-  // 🧠 NIVEL
-  let level = "";
-  if (score > 85) level = "🔥 Nivel competitivo alto";
-  else if (score > 70) level = "👍 Buen jugador";
-  else if (score > 50) level = "⚠️ Nivel medio, mejorar decisiones";
-  else level = "❌ Muchos errores críticos";
-
-  return { score, mistakes, goodPlays, level };
+  return { score, mistakes, level };
 };
 
 export default function App() {
   const [enemyTeam, setEnemyTeam] = useState("");
+  const [result, setResult] = useState(null);
+
+  const [turn, setTurn] = useState(1);
+  const [tailwind, setTailwind] = useState(false);
+  const [protectLast, setProtectLast] = useState(false);
+
   const [history, setHistory] = useState([]);
   const [playerMove, setPlayerMove] = useState("");
   const [enemyAction, setEnemyAction] = useState("");
-  const [tailwind, setTailwind] = useState(false);
-  const [result, setResult] = useState(null);
 
-  const saveTurn = () => {
-    const newTurn = {
-      playerMove,
-      enemyAction,
-      tailwind
-    };
+  const [liveAdvice, setLiveAdvice] = useState("");
+  const [finalResult, setFinalResult] = useState(null);
 
-    setHistory([...history, newTurn]);
-    setPlayerMove("");
-    setEnemyAction("");
+  // 🔥 ANALIZAR MATCHUP
+  const runCoach = () => {
+    const threats = detectThreats(enemyTeam);
+    const leads = chooseLeads(threats);
+    const plan = buildPlan(threats);
+    setResult({ threats, leads, plan });
   };
 
+  // 🧠 DECISIÓN EN VIVO
+  const liveDecision = () => {
+    const main = enemyTeam.includes("Sneasler")
+      ? "Sneasler"
+      : "Whimsicott";
+
+    const pred = predict(main, { tailwind, protectLast });
+    const action = decide(pred);
+
+    let txt = `Turno ${turn}\n`;
+    txt += "Predicción:\n" + JSON.stringify(pred, null, 2);
+    txt += "\n\n👉 " + action;
+
+    setLiveAdvice(txt);
+  };
+
+  // 💾 GUARDAR TURNO
+  const saveTurn = () => {
+    setHistory([
+      ...history,
+      { player: playerMove, enemy: enemyAction, tailwind }
+    ]);
+    setTurn(turn + 1);
+    setPlayerMove("");
+    setEnemyAction("");
+    setProtectLast(enemyAction === "protect");
+  };
+
+  // 🏁 FINAL
   const finishGame = () => {
-    const analysis = analyzeGame(history);
-    setResult(analysis);
+    setFinalResult(analyzeGame(history));
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>🔥 VGC Coach PRO++</h1>
+      <h1>🔥 VGC Coach GOD MODE</h1>
 
       <h3>Equipo rival</h3>
       <input
@@ -128,48 +184,52 @@ export default function App() {
         placeholder="Sneasler, Whimsicott..."
       />
 
+      <button onClick={runCoach}>Analizar</button>
+
+      {result && (
+        <div>
+          <h3>Leads: {result.leads.join(" + ")}</h3>
+          <p>Turno 1: {result.plan.t1}</p>
+          <p>Turno 2: {result.plan.t2}</p>
+          <p>Turno 3: {result.plan.t3}</p>
+        </div>
+      )}
+
+      <hr />
+
+      <h2>🎮 Turno {turn}</h2>
+
+      <button onClick={() => setTailwind(!tailwind)}>
+        Tailwind: {tailwind ? "ON" : "OFF"}
+      </button>
+
+      <button onClick={liveDecision}>🧠 Qué hago ahora</button>
+
+      <pre>{liveAdvice}</pre>
+
       <h3>Tu jugada</h3>
       <input
         value={playerMove}
         onChange={(e) => setPlayerMove(e.target.value)}
-        placeholder="Fake Out / attack / pressure / safe"
       />
 
-      <h3>Acción rival</h3>
+      <h3>Rival</h3>
       <input
         value={enemyAction}
         onChange={(e) => setEnemyAction(e.target.value)}
-        placeholder="attack / protect / setup / switch"
       />
 
-      <div>
-        <button onClick={() => setTailwind(!tailwind)}>
-          Tailwind ({tailwind ? "ON" : "OFF"})
-        </button>
-      </div>
+      <button onClick={saveTurn}>Guardar turno</button>
 
-      <button onClick={saveTurn}>💾 Guardar turno</button>
+      <button onClick={finishGame}>Finalizar partida</button>
 
-      <button onClick={finishGame} style={{ marginLeft: 10 }}>
-        🏁 Terminar partida
-      </button>
-
-      {result && (
-        <div style={{ marginTop: 20 }}>
+      {finalResult && (
+        <div>
           <h2>📊 Resultado</h2>
-          <p><strong>Puntuación:</strong> {result.score}/100</p>
-          <p><strong>Nivel:</strong> {result.level}</p>
-
-          <h3>✅ Buenas jugadas</h3>
+          <p>Puntuación: {finalResult.score}</p>
+          <p>{finalResult.level}</p>
           <ul>
-            {result.goodPlays.map((g, i) => (
-              <li key={i}>{g}</li>
-            ))}
-          </ul>
-
-          <h3>❌ Errores</h3>
-          <ul>
-            {result.mistakes.map((m, i) => (
+            {finalResult.mistakes.map((m, i) => (
               <li key={i}>{m}</li>
             ))}
           </ul>
