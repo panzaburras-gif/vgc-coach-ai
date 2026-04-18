@@ -1,181 +1,210 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-const POKEMON = [
-  "incineroar","rotom","tyranitar","aegislash","kommo-o","floette",
-  "whimsicott","tornadus","charizard","pelipper","sneasler","chien-pao",
-  "flutter-mane","iron-hands","garchomp","dragonite","kingambit",
-  "ursaluna","amoonguss","cresselia","heatran","landorus-therian",
-  "urshifu-rapid-strike","urshifu-single-strike"
+// 🔥 TU EQUIPO
+const YOUR_TEAM = [
+  "Incineroar",
+  "Rotom",
+  "Aegislash",
+  "Tyranitar",
+  "Kommo-o",
+  "Floette"
 ];
 
-const getSprite = (name) =>
-  `https://img.pokemondb.net/sprites/home/normal/${name}.png`;
-
-// 🔥 TU EQUIPO REAL
-const MIS_SETS = {
-  incineroar: ["fake out", "parting shot", "flare blitz"],
-  rotom: ["electroweb", "hydro pump", "volt switch"],
-  tyranitar: ["rock slide", "knock off"],
-  aegislash: ["shadow sneak", "iron head", "king's shield"],
-  "kommo-o": ["clangorous soul", "aura sphere"],
-  floette: ["moonblast"]
+// 🔥 BASE DE DATOS META (simplificada pero realista)
+const META_BEHAVIOR = {
+  Whimsicott: {
+    turn1: { setup: 0.7, protect: 0.1, attack: 0.2, switch: 0 },
+  },
+  Sneasler: {
+    turn1: { attack: 0.6, protect: 0.3, setup: 0.1, switch: 0 },
+  },
+  Charizard: {
+    turn1: { attack: 0.7, protect: 0.2, setup: 0.1, switch: 0 },
+  },
+  Incineroar: {
+    turn1: { attack: 0.3, protect: 0.2, setup: 0, switch: 0.5 },
+  }
 };
 
-function obtenerMovimientos(p) {
-  return MIS_SETS[p] || ["attack"];
-}
+// 🧠 PREDICCIÓN DE ACCIONES
+const predictEnemyAction = (pokemon, context) => {
+  let base = META_BEHAVIOR[pokemon]?.turn1;
 
-// 🧠 LECTURA RIVAL
-function analizarEquipoRival(equipo) {
-  if (equipo.includes("whimsicott") || equipo.includes("tornadus")) return "speed_control";
-  if (equipo.includes("charizard")) return "sun";
-  if (equipo.includes("pelipper")) return "rain";
-  if (equipo.includes("sneasler") || equipo.includes("chien-pao")) return "hyper";
-  return "standard";
-}
+  if (!base) {
+    return { attack: 0.4, protect: 0.3, switch: 0.2, setup: 0.1 };
+  }
 
-// 🎯 WIN CONDITION
-function detectarWinCondition(equipo) {
-  if (equipo.includes("charizard")) return { objetivo: "charizard" };
-  if (equipo.includes("sneasler")) return { objetivo: "sneasler" };
-  if (equipo.includes("pelipper")) return { objetivo: "pelipper" };
-  return { objetivo: equipo[0] };
-}
+  let prediction = { ...base };
 
-// 🎯 LEADS
-function elegirLeads(mi) {
-  return mi.slice(0, 2);
-}
+  // Ajustes inteligentes
+  if (context.lowHP) {
+    prediction.protect += 0.25;
+    prediction.attack -= 0.15;
+  }
 
-// 💥 KO CHECK
-function calcularKO(miEquipo, target) {
-  const mapa = {
-    rotom: ["charizard","pelipper"],
-    tyranitar: ["charizard"],
-    aegislash: ["flutter-mane","sneasler"],
-    floette: ["garchomp"]
+  if (context.usedProtectLastTurn) {
+    prediction.protect -= 0.2;
+    prediction.attack += 0.1;
+  }
+
+  if (context.hasSpeedAdvantage) {
+    prediction.attack += 0.15;
+  }
+
+  if (context.badMatchup) {
+    prediction.switch += 0.25;
+  }
+
+  return prediction;
+};
+
+// 🎯 DECISIÓN ÓPTIMA
+const getBestMove = (prediction) => {
+  if (prediction.setup > 0.5) {
+    return "🔥 Castiga setup: Fake Out / presión inmediata";
+  }
+
+  if (prediction.protect > 0.4) {
+    return "🛡️ Rival probablemente protege → haz switch o setup gratis";
+  }
+
+  if (prediction.switch > 0.4) {
+    return "🔄 Rival probablemente cambie → usa movimiento seguro";
+  }
+
+  return "⚔️ Rival probablemente ataca → juega defensivo o trade favorable";
+};
+
+export default function App() {
+  const [enemyTeam, setEnemyTeam] = useState("");
+  const [gameState, setGameState] = useState({
+    turn: 1,
+    tailwind: false,
+    enemyProtected: false,
+    enemyBoosted: false,
+    lastAdvice: "",
+    prediction: null
+  });
+
+  // 🔍 DETECTAR ARQUETIPO
+  const detectArchetype = () => {
+    if (
+      enemyTeam.includes("Sneasler") &&
+      enemyTeam.includes("Whimsicott")
+    ) {
+      return "hyperOffense";
+    }
+    if (enemyTeam.includes("Charizard")) {
+      return "sun";
+    }
+    return "balanced";
   };
 
-  let puede = false;
-  miEquipo.forEach(p => {
-    if (mapa[p]?.includes(target)) puede = true;
-  });
+  // 🧠 COACH PRINCIPAL
+  const getCoachDecision = () => {
+    const archetype = detectArchetype();
+    let advice = "";
 
-  return puede;
-}
+    let mainThreat = "Whimsicott";
+    if (enemyTeam.includes("Sneasler")) mainThreat = "Sneasler";
 
-// 🎮 JUGADA EXACTA
-function jugadaExacta(leads, target, turno) {
-  return leads.map(p => {
-    const moves = obtenerMovimientos(p);
+    const prediction = predictEnemyAction(mainThreat, {
+      lowHP: false,
+      usedProtectLastTurn: gameState.enemyProtected,
+      hasSpeedAdvantage: gameState.tailwind,
+      badMatchup: false
+    });
 
-    if (moves.includes("fake out") && turno === 1)
-      return `${p}: fake out → ${target}`;
+    const decision = getBestMove(prediction);
 
-    if (moves.includes("electroweb"))
-      return `${p}: electroweb`;
-
-    return `${p}: ${moves[0]} → ${target}`;
-  });
-}
-
-// 📊 ESTADO COMBATE
-function evaluarEstado(vidasMias, vidasRival) {
-  if (vidasMias > vidasRival) return "ventaja";
-  if (vidasMias < vidasRival) return "desventaja";
-  return "igualado";
-}
-
-// 🎯 LÍNEAS
-function generarLineas(puedeKO, target) {
-  return [
-    { tipo: "segura", accion: `presionar ${target}`, win: "70%" },
-    { tipo: "agresiva", accion: `doble target ${target}`, win: puedeKO ? "85%" : "50%" },
-    { tipo: "defensiva", accion: "reposicionar", win: "60%" }
-  ];
-}
-
-export default function Home() {
-
-  const [miSeleccion, setMi] = useState([]);
-  const [rivalSeleccion, setRival] = useState([]);
-  const [turno, setTurno] = useState(1);
-  const [resultado, setResultado] = useState("");
-  const [evento, setEvento] = useState("");
-  const [vidasMias, setVidasMias] = useState(4);
-  const [vidasRival, setVidasRival] = useState(4);
-
-  function toggle(p, lado) {
-    if (lado === "mio") {
-      setMi(prev => prev.includes(p) ? prev.filter(x=>x!==p) : [...prev,p].slice(0,4));
-    } else {
-      setRival(prev => prev.includes(p) ? prev.filter(x=>x!==p) : [...prev,p].slice(0,4));
+    // 🔥 PLAN BASE SEGÚN META
+    if (archetype === "hyperOffense") {
+      if (gameState.turn === 1) {
+        advice =
+          "Lead Incineroar + Aegislash. Fake Out a Whimsicott + Escudo Real.";
+      } else {
+        advice =
+          "Controla velocidad y fuerza intercambios favorables.";
+      }
     }
-  }
 
-  function analizar() {
+    else if (archetype === "sun") {
+      advice =
+        "Activa arena con Tyranitar y presiona con Avalancha.";
+    }
 
-    const estilo = analizarEquipoRival(rivalSeleccion);
-    const leads = elegirLeads(miSeleccion);
-    const win = detectarWinCondition(rivalSeleccion);
-    const puedeKO = calcularKO(miSeleccion, win.objetivo);
-    const jugada = jugadaExacta(leads, win.objetivo, turno);
-    const estado = evaluarEstado(vidasMias, vidasRival);
-    const lineas = generarLineas(puedeKO, win.objetivo);
+    else {
+      advice =
+        "Juego estándar: Fake Out + Electrotela, luego pivot.";
+    }
 
-    setResultado(`
-🧠 Rival: ${estilo}
+    advice += "\n\n🧠 Predicción rival:\n";
+    advice += JSON.stringify(prediction, null, 2);
 
-🎯 Target: ${win.objetivo}
+    advice += "\n\n👉 Decisión óptima:\n" + decision;
 
-💥 KO: ${puedeKO ? "posible" : "no"}
+    setGameState({
+      ...gameState,
+      lastAdvice: advice,
+      prediction: prediction
+    });
+  };
 
-📊 Estado: ${estado}
-
-🎮 Jugada:
-${jugada.map(j=>`👉 ${j}`).join("\n")}
-
-📊 Opciones:
-${lineas.map(l=>`${l.tipo}: ${l.accion} (${l.win})`).join("\n")}
-`);
-  }
+  const nextTurn = () => {
+    setGameState({
+      ...gameState,
+      turn: gameState.turn + 1,
+      enemyProtected: false,
+      enemyBoosted: false
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white p-4">
+    <div style={{ padding: 20 }}>
+      <h1>🔥 VGC Coach PRO</h1>
 
-      <h1 className="text-3xl text-center mb-4">⚡ VGC Coach PRO</h1>
+      <h3>Tu equipo</h3>
+      <p>{YOUR_TEAM.join(", ")}</p>
 
-      <h2>Tu equipo</h2>
-      <div className="grid grid-cols-6 gap-2">
-        {POKEMON.map(p => (
-          <img key={p} src={getSprite(p)}
-            onClick={()=>toggle(p,"mio")}
-            className={`cursor-pointer p-1 ${miSeleccion.includes(p)?"bg-green-500":"bg-gray-800"}`}
-          />
-        ))}
+      <h3>Equipo rival</h3>
+      <input
+        type="text"
+        placeholder="Ej: Sneasler, Whimsicott..."
+        value={enemyTeam}
+        onChange={(e) => setEnemyTeam(e.target.value)}
+        style={{ width: "100%", padding: 10 }}
+      />
+
+      <h3>Turno: {gameState.turn}</h3>
+
+      <div style={{ marginTop: 10 }}>
+        <button onClick={() => setGameState({ ...gameState, tailwind: true })}>
+          Activaron Tailwind
+        </button>
+
+        <button onClick={() => setGameState({ ...gameState, enemyProtected: true })}>
+          Rival protegió
+        </button>
+
+        <button onClick={() => setGameState({ ...gameState, enemyBoosted: true })}>
+          Rival boosteado
+        </button>
       </div>
 
-      <h2>Rival</h2>
-      <div className="grid grid-cols-6 gap-2">
-        {POKEMON.map(p => (
-          <img key={p} src={getSprite(p)}
-            onClick={()=>toggle(p,"rival")}
-            className={`cursor-pointer p-1 ${rivalSeleccion.includes(p)?"bg-red-500":"bg-gray-800"}`}
-          />
-        ))}
-      </div>
+      <button onClick={getCoachDecision} style={{ marginTop: 15 }}>
+        🧠 Pedir decisión
+      </button>
 
-      <input placeholder="Evento turno"
-        onChange={e=>setEvento(e.target.value)}
-        className="w-full p-2 mt-3 bg-black"/>
+      <button onClick={nextTurn} style={{ marginLeft: 10 }}>
+        ➡️ Siguiente turno
+      </button>
 
-      <div className="flex gap-2 mt-2">
-        <button onClick={()=>setTurno(turno+1)}>Turno+</button>
-        <button onClick={analizar}>Analizar</button>
-      </div>
-
-      <pre className="mt-4 bg-black p-4">{resultado}</pre>
-
+      {gameState.lastAdvice && (
+        <div style={{ marginTop: 20 }}>
+          <h2>📢 Coach dice:</h2>
+          <pre>{gameState.lastAdvice}</pre>
+        </div>
+      )}
     </div>
   );
 }
