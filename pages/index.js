@@ -38,12 +38,13 @@ function similitud(a, b) {
 
 export default function Home() {
   const [rival, setRival] = useState("");
+  const [info, setInfo] = useState("");
   const [resultado, setResultado] = useState("");
   const [turno, setTurno] = useState(0);
   const [equipo, setEquipo] = useState([]);
 
   function detectarEquipo() {
-    const palabras = rival.toLowerCase().trim().split(/\s+/);
+    const palabras = rival.toLowerCase().split(" ");
     let detectados = [];
 
     for (let palabra of palabras) {
@@ -75,41 +76,58 @@ export default function Home() {
     return detectados.slice(0, 4);
   }
 
-  function iniciarCombate() {
+  function iniciar() {
     const eq = detectarEquipo();
     setEquipo(eq);
     setTurno(1);
 
-    if (eq.includes("charizard") && eq.includes("whimsicott")) {
+    setResultado(
+      "🔥 Turno 1\n👉 Lead: Incineroar + Rotom\n👉 Fake Out + control de velocidad"
+    );
+  }
+
+  function adaptar() {
+    const i = info.toLowerCase();
+
+    if (i.includes("protect")) {
       setResultado(
-        "🔥 Turno 1\n👉 Lead: Tyranitar + Rotom\n👉 Fake Out a Whimsicott + Electroweb"
+        "🧠 Detectado Protect\n👉 Dobla target turno siguiente\n👉 Gana momentum"
       );
       return;
     }
 
-    setResultado("🔥 Turno 1\n👉 Lead estándar: Incineroar + Rotom");
+    if (i.includes("murio") || i.includes("muerto")) {
+      setResultado(
+        "💀 Has perdido un Pokémon\n👉 Reposiciona\n👉 Busca control de velocidad"
+      );
+      return;
+    }
+
+    if (i.includes("tailwind")) {
+      setResultado(
+        "💨 Tailwind activo\n👉 Protege y stall\n👉 No intercambies KOs"
+      );
+      return;
+    }
+
+    if (i.includes("fake out")) {
+      setResultado(
+        "👊 Fake Out detectado\n👉 Ahora tienes turno libre\n👉 Presión máxima"
+      );
+      return;
+    }
+
+    setResultado(
+      "🤔 No claro\n👉 Juega seguro\n👉 Prioriza posicionamiento"
+    );
   }
 
   function siguienteTurno() {
-    if (turno === 1) {
-      setTurno(2);
+    setTurno(turno + 1);
 
-      setResultado(
-        "🔥 Turno 2\n👉 Si Tailwind activo: protege + reposiciona\n👉 Si no: presión ofensiva"
-      );
-      return;
-    }
-
-    if (turno === 2) {
-      setTurno(3);
-
-      setResultado(
-        "🔥 Turno 3\n👉 Empieza a cerrar partida\n👉 Busca KO clave"
-      );
-      return;
-    }
-
-    setResultado("👉 Sigue presionando y adapta según el rival");
+    setResultado(
+      "➡️ Turno " + (turno + 1) + "\n👉 Evalúa estado y aplica presión"
+    );
   }
 
   function reset() {
@@ -117,11 +135,12 @@ export default function Home() {
     setEquipo([]);
     setResultado("");
     setRival("");
+    setInfo("");
   }
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>🔥 VGC Coach IA PRO</h1>
+      <h1>🔥 VGC Coach IA REAL</h1>
 
       <input
         placeholder="Equipo rival"
@@ -131,9 +150,19 @@ export default function Home() {
 
       <br /><br />
 
-      <button onClick={iniciarCombate}>Iniciar combate</button>
+      <button onClick={iniciar}>Iniciar combate</button>
       <button onClick={siguienteTurno}>Siguiente turno</button>
       <button onClick={reset}>Reset</button>
+
+      <br /><br />
+
+      <input
+        placeholder="Qué ha pasado (ej: protect, murió rotom...)"
+        value={info}
+        onChange={(e) => setInfo(e.target.value)}
+      />
+
+      <button onClick={adaptar}>Adaptar IA</button>
 
       <p>{resultado}</p>
     </div>
