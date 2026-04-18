@@ -7,7 +7,6 @@ const meta = {
   keys: ["char", "zard", "chari", "charizard"],
   respuesta: "👉 Cuidado con sol, usa Tyranitar para counter"
 },
-  },
   sneasler: {
     respuesta: "👉 Muy rápido, presión inmediata o Fake Out"
   },
