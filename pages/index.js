@@ -1,42 +1,39 @@
 import { useState } from "react";
+
 const meta = {
   incineroar: {
-    keys: ["inci", "incin", "incineroar"],
-    respuesta: "👉 Fake Out + Intimidate, controla el ritmo"
+    keys: ["inci", "incin", "incineroar"]
   },
   charizard: {
-    keys: ["char", "chari", "zard", "charizard"],
-    respuesta: "👉 Cuidado con sol, usa Tyranitar para counter"
+    keys: ["char", "chari", "zard", "charizard"]
   },
   sneasler: {
-    keys: ["snea", "sneas", "sneasler"],
-    respuesta: "👉 Muy rápido, presión inmediata o Fake Out"
+    keys: ["snea", "sneas", "sneasler"]
   },
   sinistcha: {
-    keys: ["sini", "sinis", "sinistcha"],
-    respuesta: "👉 Difícil de bajar, juega posicionamiento"
+    keys: ["sini", "sinis", "sinistcha"]
   },
   gengar: {
-    keys: ["geng", "genga", "gengar"],
-    respuesta: "👉 Muy ofensivo, cuidado con KO rápido"
+    keys: ["geng", "genga", "gengar"]
   },
   floette: {
-    keys: ["floe", "floet", "floette"],
-    respuesta: "👉 Mucho daño especial, usa resistencia"
+    keys: ["floe", "floet", "floette"]
   },
   tyranitar: {
-    keys: ["tyra", "tyran", "ttar", "tyranitar"],
-    respuesta: "👉 Cambia clima y aguanta mucho"
+    keys: ["tyra", "tyran", "ttar", "tyranitar"]
   },
   pelipper: {
-    keys: ["peli", "pelip", "pelipper"],
-    respuesta: "👉 Activa lluvia, cuidado con boosts"
+    keys: ["peli", "pelip", "pelipper"]
   },
   garchomp: {
-    keys: ["garch", "chomp", "garchomp"],
-    respuesta: "👉 Spread damage, cuidado con terremoto"
+    keys: ["garch", "chomp", "garchomp"]
+  },
+  whimsicott: {
+    keys: ["whim", "cotti", "whimsicott"]
   }
 };
+
+// 🔥 IA de similitud PRO
 function similitud(a, b) {
   const dp = Array.from({ length: a.length + 1 }, () =>
     Array(b.length + 1).fill(0)
@@ -62,79 +59,79 @@ function similitud(a, b) {
 
   return 1 - distancia / maxLen;
 }
+
 export default function Home() {
   const [rival, setRival] = useState("");
   const [resultado, setResultado] = useState("");
 
-function analizar() {
-  const palabras = rival.toLowerCase().trim().split(/\s+/);
+  function analizar() {
+    const palabras = rival.toLowerCase().trim().split(/\s+/);
 
-  let detectados = [];
+    let detectados = [];
 
-  for (let palabra of palabras) {
-    let mejorMatch = null;
-    let mejorScore = 0;
+    for (let palabra of palabras) {
+      let mejorMatch = null;
+      let mejorScore = 0;
 
-    for (let poke in meta) {
-      const score = similitud(palabra, poke);
+      for (let poke in meta) {
+        const data = meta[poke];
 
-      if (score > mejorScore) {
-        mejorScore = score;
-        mejorMatch = poke;
+        // 🔥 keys (rápido)
+        for (let key of data.keys) {
+          if (palabra.includes(key)) {
+            mejorMatch = poke;
+            mejorScore = 1;
+          }
+        }
+
+        // 🔥 similitud (por si escribes mal)
+        const score = similitud(palabra, poke);
+        if (score > mejorScore) {
+          mejorScore = score;
+          mejorMatch = poke;
+        }
+      }
+
+      if (mejorMatch && !detectados.includes(mejorMatch)) {
+        detectados.push(mejorMatch);
       }
     }
 
-   if (mejorMatch && !detectados.includes(mejorMatch)) {
-  detectados.push(mejorMatch);
-}
-   detectados = detectados.slice(0, 4);
+    // 🔥 máximo 4 Pokémon
+    detectados = detectados.slice(0, 4);
+
+    const equipo = detectados;
+
+    // 🔥 CHARIZARD CORE
+    if (equipo.includes("charizard") && equipo.includes("whimsicott")) {
+      setResultado(
+        "🔥 Charizard + Whimsicott\n👉 Lead: Tyranitar + Rotom\n👉 Fake Out + Electroweb\n👉 Evita Tailwind y sol"
+      );
+      return;
+    }
+
+    // 🔥 LLUVIA
+    if (equipo.includes("pelipper")) {
+      setResultado(
+        "🔥 Lluvia\n👉 Rotom + Tyranitar\n👉 Cambia clima\n👉 Controla velocidad"
+      );
+      return;
+    }
+
+    // 🔥 SNEASLER
+    if (equipo.includes("sneasler")) {
+      setResultado(
+        "🔥 Sneasler\n👉 Incineroar\n👉 Fake Out turno 1\n👉 Evita snowball"
+      );
+      return;
+    }
+
+    // 🔥 DEFAULT
+    setResultado(
+      "👉 Incineroar + Rotom\n👉 Fake Out + posicionamiento\n👉 Juego estándar"
+    );
   }
 
- const equipo = detectados;
-
-// 🔥 LECTURA DE EQUIPO
-
-// CHARIZARD CORE
-if (equipo.includes("charizard") && equipo.includes("whimsicott")) {
-  setResultado(
-    "🔥 Core detectado: Charizard + Whimsicott\n" +
-    "👉 Lead recomendado: Tyranitar + Rotom\n" +
-    "👉 Turno 1:\n- Fake Out a Whimsicott\n- Electroweb\n" +
-    "👉 Plan: evitar Tailwind y quitar sol\n" +
-    "👉 Win condition: controlar velocidad"
-  );
-  return;
-}
-
-// LLUVIA
-if (equipo.includes("pelipper")) {
-  setResultado(
-    "🔥 Equipo de lluvia\n" +
-    "👉 Lead: Rotom + Tyranitar\n" +
-    "👉 Turno 1:\n- Cambiar clima\n- Presión eléctrica\n" +
-    "👉 Plan: cortar lluvia y controlar tempo"
-  );
-  return;
-}
-
-// SNEASLER CORE
-if (equipo.includes("sneasler")) {
-  setResultado(
-    "🔥 Sneasler detectado\n" +
-    "👉 Lead: Incineroar\n" +
-    "👉 Turno 1:\n- Fake Out a Sneasler\n" +
-    "👉 Plan: evitar snowball y controlar early game"
-  );
-  return;
-}
-
-// DEFAULT META
-setResultado(
-  "👉 Equipo no identificado\n" +
-  "👉 Lead: Incineroar + Rotom\n" +
-  "👉 Turno 1:\n- Fake Out + posicionamiento\n" +
-  "👉 Plan: jugar sólido y adaptar midgame"
-);
   return (
     <div style={{ padding: 20 }}>
       <h1>🔥 VGC Coach IA</h1>
