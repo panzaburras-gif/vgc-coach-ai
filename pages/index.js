@@ -87,29 +87,37 @@ function analizar() {
   const p1 = detectados[0];
   const p2 = detectados[1];
 
-  // 🔥 CASOS META
-
+  // 🔥 CHARIZARD + WHIMSICOTT
   if (
     (p1 === "charizard" && p2 === "whimsicott") ||
     (p2 === "charizard" && p1 === "whimsicott")
   ) {
-    setResultado("👉 Lead: Tyranitar + Rotom | evita Tailwind");
+    setResultado(
+      "🔥 Charizard + Whimsicott\n👉 Lead: Tyranitar + Rotom\n👉 Turno 1:\n- Fake Out a Whimsicott\n- Electroweb con Rotom\n👉 Objetivo: evitar Tailwind y quitar sol"
+    );
     return;
   }
 
+  // 🔥 SNEASLER
   if (p1 === "sneasler" || p2 === "sneasler") {
-    setResultado("👉 Incineroar lead | Fake Out turno 1");
+    setResultado(
+      "🔥 Sneasler detectado\n👉 Lead: Incineroar\n👉 Turno 1:\n- Fake Out al Sneasler\n👉 Objetivo: evitar snowball"
+    );
     return;
   }
 
+  // 🔥 LLUVIA
   if (p1 === "pelipper" || p2 === "pelipper") {
-    setResultado("👉 Rotom + Tyranitar | cambia clima");
+    setResultado(
+      "🔥 Lluvia detectada\n👉 Lead: Rotom + Tyranitar\n👉 Turno 1:\n- Cambiar clima\n- Presión eléctrica\n👉 Objetivo: cortar lluvia"
+    );
     return;
   }
 
   // 🔥 DEFAULT
-
-  setResultado("👉 Incineroar + Rotom | juego estándar");
+  setResultado(
+    "👉 Lead: Incineroar + Rotom\n👉 Turno 1:\n- Fake Out + posicionamiento\n👉 Juego estándar"
+  );
 }
   return (
     <div style={{ padding: 20 }}>
