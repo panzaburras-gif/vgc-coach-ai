@@ -1,7 +1,62 @@
 import React, { useState } from "react";
+import ReactDOM from "react-dom/client";
+
+// 🎨 ESTILO PRO
+const styles = {
+  app: {
+    fontFamily: "system-ui",
+    background: "#0f172a",
+    color: "white",
+    minHeight: "100vh",
+    maxWidth: 420,
+    margin: "0 auto"
+  },
+  header: {
+    padding: 15,
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 20,
+    background: "#1e293b"
+  },
+  section: {
+    padding: 15,
+    borderBottom: "1px solid #334155"
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 10
+  },
+  poke: {
+    padding: 10,
+    borderRadius: 10,
+    textAlign: "center",
+    cursor: "pointer",
+    background: "#334155"
+  },
+  selected: {
+    background: "#22c55e"
+  },
+  button: {
+    width: "100%",
+    padding: 14,
+    marginTop: 10,
+    borderRadius: 10,
+    border: "none",
+    fontWeight: "bold"
+  },
+  blue: { background: "#3b82f6", color: "white" },
+  green: { background: "#22c55e", color: "white" },
+  card: {
+    background: "#1e293b",
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10
+  }
+};
 
 // 🔥 TU EQUIPO
-const YOUR_TEAM = [
+const TEAM = [
   "Incineroar",
   "Rotom",
   "Aegislash",
@@ -10,231 +65,167 @@ const YOUR_TEAM = [
   "Floette"
 ];
 
-// 🔥 META BEHAVIOR
+// 🔥 META SIMPLE
 const META = {
-  Whimsicott: { setup: 0.7, protect: 0.1, attack: 0.2, switch: 0 },
-  Sneasler: { attack: 0.6, protect: 0.3, setup: 0.1, switch: 0 },
-  Charizard: { attack: 0.7, protect: 0.2, setup: 0.1, switch: 0 }
+  Sneasler: "⚔️ Presiona fuerte turno 1",
+  Whimsicott: "🧠 Evita Tailwind o castígalo"
 };
 
-// 🧠 DETECTAR AMENAZAS
-const detectThreats = (team) => {
-  let t = [];
-  if (team.includes("Sneasler")) t.push("Sneasler");
-  if (team.includes("Whimsicott")) t.push("Whimsicott");
-  if (team.includes("Charizard")) t.push("Sun");
-  return t;
-};
-
-// 🧠 LEADS
-const chooseLeads = (threats) => {
-  if (threats.includes("Sneasler") && threats.includes("Whimsicott"))
-    return ["Incineroar", "Aegislash"];
-  if (threats.includes("Sun")) return ["Tyranitar", "Rotom"];
-  return ["Incineroar", "Rotom"];
-};
-
-// 🧠 PLAN
-const buildPlan = (threats) => {
-  if (threats.includes("Sneasler") && threats.includes("Whimsicott")) {
-    return {
-      t1: "Fake Out + Escudo Real",
-      t2: "Cambio a Tyranitar",
-      t3: "Prioridad + presión",
-      note: "Evita Tailwind"
-    };
-  }
-  if (threats.includes("Sun")) {
-    return {
-      t1: "Arena + Volt Switch",
-      t2: "Avalancha",
-      t3: "Control clima",
-      note: "Cortar sol"
-    };
-  }
-  return {
-    t1: "Fake Out + Electrotela",
-    t2: "Pivot",
-    t3: "Presión",
-    note: "Juego estándar"
-  };
-};
-
-// 🧠 PREDICCIÓN
-const predict = (pokemon, context) => {
-  let p = META[pokemon] || {
-    attack: 0.4,
-    protect: 0.3,
-    switch: 0.2,
-    setup: 0.1
-  };
-
-  let res = { ...p };
-
-  if (context.tailwind) res.attack += 0.15;
-  if (context.protectLast) res.protect -= 0.2;
-
-  return res;
-};
-
-// 🎯 DECISIÓN
-const decide = (p) => {
-  if (p.setup > 0.5) return "🔥 Castiga setup YA";
-  if (p.protect > 0.4) return "🧠 Haz setup o cambia";
-  if (p.switch > 0.4) return "🔄 Movimiento seguro";
-  return "⚔️ Juega defensivo / trade";
-};
-
-// 🧠 ANALIZAR PARTIDA
-const analyzeGame = (history) => {
-  let score = 100;
-  let mistakes = [];
-
-  history.forEach((t, i) => {
-    if (t.player === "Fake Out" && t.enemy === "protect") {
-      score -= 15;
-      mistakes.push(`Turno ${i + 1}: Fake Out mal usado`);
-    }
-    if (t.tailwind && t.player === "attack") {
-      score -= 10;
-      mistakes.push(`Turno ${i + 1}: Speed war mala`);
-    }
-    if (t.enemy === "setup" && t.player !== "pressure") {
-      score -= 12;
-      mistakes.push(`Turno ${i + 1}: No castigaste setup`);
-    }
-  });
-
-  let level =
-    score > 85
-      ? "🔥 Alto nivel"
-      : score > 70
-      ? "👍 Buen jugador"
-      : score > 50
-      ? "⚠️ Mejorable"
-      : "❌ Errores graves";
-
-  return { score, mistakes, level };
-};
-
-export default function App() {
+function App() {
+  const [screen, setScreen] = useState("home");
   const [enemyTeam, setEnemyTeam] = useState("");
-  const [result, setResult] = useState(null);
+  const [selected, setSelected] = useState([]);
+  const [advice, setAdvice] = useState("");
+  const [stats, setStats] = useState({ games: 0, wins: 0 });
 
-  const [turn, setTurn] = useState(1);
-  const [tailwind, setTailwind] = useState(false);
-  const [protectLast, setProtectLast] = useState(false);
+  // 🎮 SELECCIÓN
+  const toggle = (p) => {
+    if (selected.includes(p)) {
+      setSelected(selected.filter(x => x !== p));
+    } else if (selected.length < 4) {
+      setSelected([...selected, p]);
+    }
+  };
 
-  const [history, setHistory] = useState([]);
-  const [playerMove, setPlayerMove] = useState("");
-  const [enemyAction, setEnemyAction] = useState("");
-
-  const [liveAdvice, setLiveAdvice] = useState("");
-  const [finalResult, setFinalResult] = useState(null);
-
-  // 🔥 ANALIZAR MATCHUP
+  // 🧠 COACH
   const runCoach = () => {
-    const threats = detectThreats(enemyTeam);
-    const leads = chooseLeads(threats);
-    const plan = buildPlan(threats);
-    setResult({ threats, leads, plan });
-  };
+    let text = "⚖️ Juego estándar";
 
-  // 🧠 DECISIÓN EN VIVO
-  const liveDecision = () => {
-    const main = enemyTeam.includes("Sneasler")
-      ? "Sneasler"
-      : "Whimsicott";
+    if (enemyTeam.includes("Sneasler")) {
+      text = META.Sneasler;
+    } else if (enemyTeam.includes("Whimsicott")) {
+      text = META.Whimsicott;
+    }
 
-    const pred = predict(main, { tailwind, protectLast });
-    const action = decide(pred);
-
-    let txt = `Turno ${turn}\n`;
-    txt += "Predicción:\n" + JSON.stringify(pred, null, 2);
-    txt += "\n\n👉 " + action;
-
-    setLiveAdvice(txt);
-  };
-
-  // 💾 GUARDAR TURNO
-  const saveTurn = () => {
-    setHistory([
-      ...history,
-      { player: playerMove, enemy: enemyAction, tailwind }
-    ]);
-    setTurn(turn + 1);
-    setPlayerMove("");
-    setEnemyAction("");
-    setProtectLast(enemyAction === "protect");
+    setAdvice(text);
   };
 
   // 🏁 FINAL
-  const finishGame = () => {
-    setFinalResult(analyzeGame(history));
+  const finish = () => {
+    const win = Math.random() > 0.5;
+
+    setStats({
+      games: stats.games + 1,
+      wins: stats.wins + (win ? 1 : 0)
+    });
+
+    setScreen("result");
   };
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>🔥 VGC Coach GOD MODE</h1>
+  // 🏠 HOME
+  if (screen === "home") {
+    return (
+      <div style={styles.app}>
+        <div style={styles.header}>🔥 VGC Coach PRO</div>
 
-      <h3>Equipo rival</h3>
-      <input
-        value={enemyTeam}
-        onChange={(e) => setEnemyTeam(e.target.value)}
-        placeholder="Sneasler, Whimsicott..."
-      />
+        <div style={styles.section}>
+          <p>Partidas: {stats.games}</p>
+          <p>Winrate: {stats.games ? Math.round((stats.wins / stats.games) * 100) : 0}%</p>
 
-      <button onClick={runCoach}>Analizar</button>
-
-      {result && (
-        <div>
-          <h3>Leads: {result.leads.join(" + ")}</h3>
-          <p>Turno 1: {result.plan.t1}</p>
-          <p>Turno 2: {result.plan.t2}</p>
-          <p>Turno 3: {result.plan.t3}</p>
+          <button
+            style={{ ...styles.button, ...styles.blue }}
+            onClick={() => setScreen("preview")}
+          >
+            🎮 Nueva partida
+          </button>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      <hr />
+  // 🧩 PREVIEW VISUAL
+  if (screen === "preview") {
+    return (
+      <div style={styles.app}>
+        <div style={styles.header}>Team Preview</div>
 
-      <h2>🎮 Turno {turn}</h2>
+        <div style={styles.section}>
+          <input
+            placeholder="Equipo rival"
+            value={enemyTeam}
+            onChange={(e) => setEnemyTeam(e.target.value)}
+            style={{ width: "100%", padding: 10, borderRadius: 8 }}
+          />
 
-      <button onClick={() => setTailwind(!tailwind)}>
-        Tailwind: {tailwind ? "ON" : "OFF"}
-      </button>
+          <h4>Elige 4</h4>
 
-      <button onClick={liveDecision}>🧠 Qué hago ahora</button>
-
-      <pre>{liveAdvice}</pre>
-
-      <h3>Tu jugada</h3>
-      <input
-        value={playerMove}
-        onChange={(e) => setPlayerMove(e.target.value)}
-      />
-
-      <h3>Rival</h3>
-      <input
-        value={enemyAction}
-        onChange={(e) => setEnemyAction(e.target.value)}
-      />
-
-      <button onClick={saveTurn}>Guardar turno</button>
-
-      <button onClick={finishGame}>Finalizar partida</button>
-
-      {finalResult && (
-        <div>
-          <h2>📊 Resultado</h2>
-          <p>Puntuación: {finalResult.score}</p>
-          <p>{finalResult.level}</p>
-          <ul>
-            {finalResult.mistakes.map((m, i) => (
-              <li key={i}>{m}</li>
+          <div style={styles.grid}>
+            {TEAM.map((p) => (
+              <div
+                key={p}
+                style={{
+                  ...styles.poke,
+                  ...(selected.includes(p) ? styles.selected : {})
+                }}
+                onClick={() => toggle(p)}
+              >
+                {p}
+              </div>
             ))}
-          </ul>
+          </div>
+
+          <button
+            style={{ ...styles.button, ...styles.blue }}
+            onClick={() => setScreen("battle")}
+          >
+            Empezar
+          </button>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  // 🎮 PARTIDA
+  if (screen === "battle") {
+    return (
+      <div style={styles.app}>
+        <div style={styles.header}>Partida</div>
+
+        <div style={styles.section}>
+          <p>Equipo: {selected.join(", ")}</p>
+
+          <button
+            style={{ ...styles.button, ...styles.blue }}
+            onClick={runCoach}
+          >
+            🧠 Qué hago
+          </button>
+
+          {advice && <div style={styles.card}>{advice}</div>}
+
+          <button
+            style={{ ...styles.button, ...styles.green }}
+            onClick={finish}
+          >
+            🏁 Finalizar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 📊 RESULTADO
+  if (screen === "result") {
+    return (
+      <div style={styles.app}>
+        <div style={styles.header}>Resultado</div>
+
+        <div style={styles.section}>
+          <p>Partidas: {stats.games}</p>
+          <p>Winrate: {Math.round((stats.wins / stats.games) * 100)}%</p>
+
+          <button
+            style={{ ...styles.button, ...styles.blue }}
+            onClick={() => setScreen("home")}
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
+
+// 🔥 RENDER
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
