@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import ReactDOM from "react-dom/client";
+"use client";
 
-// 🎨 ESTILO PRO
+import { useState } from "react";
+
+// 🎨 ESTILOS
 const styles = {
   app: {
     fontFamily: "system-ui",
@@ -47,6 +48,7 @@ const styles = {
   },
   blue: { background: "#3b82f6", color: "white" },
   green: { background: "#22c55e", color: "white" },
+  yellow: { background: "#f59e0b", color: "black" },
   card: {
     background: "#1e293b",
     padding: 10,
@@ -67,15 +69,49 @@ const TEAM = [
 
 // 🔥 META SIMPLE
 const META = {
-  Sneasler: "⚔️ Presiona fuerte turno 1",
-  Whimsicott: "🧠 Evita Tailwind o castígalo"
+  Sneasler: { attack: 0.6, protect: 0.3, setup: 0.1 },
+  Whimsicott: { setup: 0.7, attack: 0.2, protect: 0.1 }
 };
 
-function App() {
+// 🧠 APRENDER RIVAL
+const learnOpponent = (history) => {
+  let stats = { attack: 0, protect: 0, setup: 0 };
+
+  history.forEach((t) => {
+    stats[t.enemy] = (stats[t.enemy] || 0) + 1;
+  });
+
+  const total = history.length || 1;
+
+  return {
+    attack: (stats.attack || 0) / total,
+    protect: (stats.protect || 0) / total,
+    setup: (stats.setup || 0) / total
+  };
+};
+
+// 🧠 PERFIL
+const getProfile = (s) => {
+  if (s.protect > 0.4) return "🛡️ Defensivo";
+  if (s.attack > 0.6) return "⚔️ Agresivo";
+  if (s.setup > 0.3) return "📈 Setup";
+  return "⚖️ Balanceado";
+};
+
+// 🎯 DECISIÓN
+const decide = (p) => {
+  if (p.setup > 0.5) return "🔥 Castiga setup";
+  if (p.protect > 0.4) return "🧠 Bait / setup";
+  return "⚔️ Presión";
+};
+
+export default function Home() {
   const [screen, setScreen] = useState("home");
   const [enemyTeam, setEnemyTeam] = useState("");
   const [selected, setSelected] = useState([]);
+  const [history, setHistory] = useState([]);
   const [advice, setAdvice] = useState("");
+  const [turn, setTurn] = useState(1);
   const [stats, setStats] = useState({ games: 0, wins: 0 });
 
   // 🎮 SELECCIÓN
@@ -89,15 +125,26 @@ function App() {
 
   // 🧠 COACH
   const runCoach = () => {
-    let text = "⚖️ Juego estándar";
+    const learned = learnOpponent(history);
+    const profile = getProfile(learned);
 
-    if (enemyTeam.includes("Sneasler")) {
-      text = META.Sneasler;
-    } else if (enemyTeam.includes("Whimsicott")) {
-      text = META.Whimsicott;
-    }
+    const main = enemyTeam.includes("Sneasler")
+      ? "Sneasler"
+      : "Whimsicott";
 
-    setAdvice(text);
+    const pred = META[main] || { attack: 0.4, protect: 0.3, setup: 0.3 };
+
+    const decision = decide(pred);
+
+    setAdvice(
+      `Turno ${turn}\n${profile}\n\n👉 ${decision}`
+    );
+  };
+
+  // 💾 GUARDAR TURNO
+  const saveTurn = (enemyAction) => {
+    setHistory([...history, { enemy: enemyAction }]);
+    setTurn(turn + 1);
   };
 
   // 🏁 FINAL
@@ -120,7 +167,13 @@ function App() {
 
         <div style={styles.section}>
           <p>Partidas: {stats.games}</p>
-          <p>Winrate: {stats.games ? Math.round((stats.wins / stats.games) * 100) : 0}%</p>
+          <p>
+            Winrate:{" "}
+            {stats.games
+              ? Math.round((stats.wins / stats.games) * 100)
+              : 0}
+            %
+          </p>
 
           <button
             style={{ ...styles.button, ...styles.blue }}
@@ -133,7 +186,7 @@ function App() {
     );
   }
 
-  // 🧩 PREVIEW VISUAL
+  // 🧩 PREVIEW
   if (screen === "preview") {
     return (
       <div style={styles.app}>
@@ -144,7 +197,7 @@ function App() {
             placeholder="Equipo rival"
             value={enemyTeam}
             onChange={(e) => setEnemyTeam(e.target.value)}
-            style={{ width: "100%", padding: 10, borderRadius: 8 }}
+            style={{ width: "100%", padding: 10 }}
           />
 
           <h4>Elige 4</h4>
@@ -175,11 +228,11 @@ function App() {
     );
   }
 
-  // 🎮 PARTIDA
+  // 🎮 BATTLE
   if (screen === "battle") {
     return (
       <div style={styles.app}>
-        <div style={styles.header}>Partida</div>
+        <div style={styles.header}>Turno {turn}</div>
 
         <div style={styles.section}>
           <p>Equipo: {selected.join(", ")}</p>
@@ -193,6 +246,29 @@ function App() {
 
           {advice && <div style={styles.card}>{advice}</div>}
 
+          <h4>Acción rival</h4>
+
+          <button
+            style={{ ...styles.button, ...styles.green }}
+            onClick={() => saveTurn("attack")}
+          >
+            ⚔️ Attack
+          </button>
+
+          <button
+            style={{ ...styles.button, ...styles.yellow }}
+            onClick={() => saveTurn("protect")}
+          >
+            🛡️ Protect
+          </button>
+
+          <button
+            style={{ ...styles.button, ...styles.blue }}
+            onClick={() => saveTurn("setup")}
+          >
+            📈 Setup
+          </button>
+
           <button
             style={{ ...styles.button, ...styles.green }}
             onClick={finish}
@@ -204,28 +280,25 @@ function App() {
     );
   }
 
-  // 📊 RESULTADO
-  if (screen === "result") {
-    return (
-      <div style={styles.app}>
-        <div style={styles.header}>Resultado</div>
+  // 📊 RESULT
+  return (
+    <div style={styles.app}>
+      <div style={styles.header}>Resultado</div>
 
-        <div style={styles.section}>
-          <p>Partidas: {stats.games}</p>
-          <p>Winrate: {Math.round((stats.wins / stats.games) * 100)}%</p>
+      <div style={styles.section}>
+        <p>Partidas: {stats.games}</p>
+        <p>
+          Winrate:{" "}
+          {Math.round((stats.wins / stats.games) * 100)}%
+        </p>
 
-          <button
-            style={{ ...styles.button, ...styles.blue }}
-            onClick={() => setScreen("home")}
-          >
-            Volver
-          </button>
-        </div>
+        <button
+          style={{ ...styles.button, ...styles.blue }}
+          onClick={() => setScreen("home")}
+        >
+          🔄 Volver
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
 }
-
-// 🔥 RENDER
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
