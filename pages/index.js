@@ -90,37 +90,51 @@ function analizar() {
    detectados = detectados.slice(0, 4);
   }
 
-  const p1 = detectados[0];
-  const p2 = detectados[1];
+ const equipo = detectados;
 
-  // 🔥 LÓGICA REAL
+// 🔥 LECTURA DE EQUIPO
 
-  if (
-    (p1 === "charizard" && p2 === "whimsicott") ||
-    (p2 === "charizard" && p1 === "whimsicott")
-  ) {
-    setResultado(
-      "🔥 Charizard + Whimsicott\n👉 Lead: Tyranitar + Rotom\n👉 Fake Out + Electroweb\n👉 Evita Tailwind"
-    );
-    return;
-  }
-
-  if (p1 === "sneasler" || p2 === "sneasler") {
-    setResultado(
-      "🔥 Sneasler\n👉 Incineroar lead\n👉 Fake Out turno 1"
-    );
-    return;
-  }
-
-  if (p1 === "pelipper" || p2 === "pelipper") {
-    setResultado(
-      "🔥 Lluvia\n👉 Rotom + Tyranitar\n👉 Cambia clima"
-    );
-    return;
-  }
-
-  setResultado("👉 Incineroar + Rotom | juego estándar");
+// CHARIZARD CORE
+if (equipo.includes("charizard") && equipo.includes("whimsicott")) {
+  setResultado(
+    "🔥 Core detectado: Charizard + Whimsicott\n" +
+    "👉 Lead recomendado: Tyranitar + Rotom\n" +
+    "👉 Turno 1:\n- Fake Out a Whimsicott\n- Electroweb\n" +
+    "👉 Plan: evitar Tailwind y quitar sol\n" +
+    "👉 Win condition: controlar velocidad"
+  );
+  return;
 }
+
+// LLUVIA
+if (equipo.includes("pelipper")) {
+  setResultado(
+    "🔥 Equipo de lluvia\n" +
+    "👉 Lead: Rotom + Tyranitar\n" +
+    "👉 Turno 1:\n- Cambiar clima\n- Presión eléctrica\n" +
+    "👉 Plan: cortar lluvia y controlar tempo"
+  );
+  return;
+}
+
+// SNEASLER CORE
+if (equipo.includes("sneasler")) {
+  setResultado(
+    "🔥 Sneasler detectado\n" +
+    "👉 Lead: Incineroar\n" +
+    "👉 Turno 1:\n- Fake Out a Sneasler\n" +
+    "👉 Plan: evitar snowball y controlar early game"
+  );
+  return;
+}
+
+// DEFAULT META
+setResultado(
+  "👉 Equipo no identificado\n" +
+  "👉 Lead: Incineroar + Rotom\n" +
+  "👉 Turno 1:\n- Fake Out + posicionamiento\n" +
+  "👉 Plan: jugar sólido y adaptar midgame"
+);
   return (
     <div style={{ padding: 20 }}>
       <h1>🔥 VGC Coach IA</h1>
