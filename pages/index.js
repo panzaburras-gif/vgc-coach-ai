@@ -28,6 +28,16 @@ const meta = {
     respuesta: "👉 Spread damage, cuidado con terremoto"
   }
 };
+function similitud(a, b) {
+  let distancia = 0;
+  const max = Math.max(a.length, b.length);
+
+  for (let i = 0; i < max; i++) {
+    if (a[i] !== b[i]) distancia++;
+  }
+
+  return 1 - distancia / max;
+}
 export default function Home() {
   const [rival, setRival] = useState("");
   const [resultado, setResultado] = useState("");
