@@ -38,14 +38,29 @@ const meta = {
   }
 };
 function similitud(a, b) {
-  let distancia = 0;
-  const max = Math.max(a.length, b.length);
+  const dp = Array.from({ length: a.length + 1 }, () =>
+    Array(b.length + 1).fill(0)
+  );
 
-  for (let i = 0; i < max; i++) {
-    if (a[i] !== b[i]) distancia++;
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
   }
 
-  return 1 - distancia / max;
+  const distancia = dp[a.length][b.length];
+  const maxLen = Math.max(a.length, b.length);
+
+  return 1 - distancia / maxLen;
 }
 export default function Home() {
   const [rival, setRival] = useState("");
