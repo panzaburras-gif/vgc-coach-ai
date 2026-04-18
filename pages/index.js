@@ -87,6 +87,8 @@ function analizar() {
   const p1 = detectados[0];
   const p2 = detectados[1];
 
+  // 🔥 CASOS META
+
   if (
     (p1 === "charizard" && p2 === "whimsicott") ||
     (p2 === "charizard" && p1 === "whimsicott")
@@ -105,26 +107,9 @@ function analizar() {
     return;
   }
 
+  // 🔥 DEFAULT
+
   setResultado("👉 Incineroar + Rotom | juego estándar");
-}
-  // 2. Si no encuentra nada → usa similitud (IA)
-  let mejorMatch = null;
-  let mejorScore = 0;
-
-  for (let poke in meta) {
-    const score = similitud(r, poke);
-
-    if (score > mejorScore) {
-      mejorScore = score;
-      mejorMatch = poke;
-    }
-  }
-
-  if (mejorScore > 0.4) {
-    setResultado(meta[mejorMatch].respuesta);
-  } else {
-    setResultado("👉 No reconocido: juega estándar y controla velocidad");
-  }
 }
   return (
     <div style={{ padding: 20 }}>
