@@ -84,7 +84,7 @@ function analizar() {
       }
     }
 
-    if (mejorScore > 0.3 && !detectados.includes(mejorMatch)) {
+   if (mejorMatch && !detectados.includes(mejorMatch)) {
   detectados.push(mejorMatch);
 }
   }
