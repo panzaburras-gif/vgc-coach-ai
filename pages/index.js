@@ -1,31 +1,39 @@
 import { useState } from "react";
 const meta = {
   incineroar: {
+    keys: ["inci", "incin", "incineroar"],
     respuesta: "👉 Fake Out + Intimidate, controla el ritmo"
   },
- charizard: {
-  keys: ["char", "zard", "chari", "charizard"],
-  respuesta: "👉 Cuidado con sol, usa Tyranitar para counter"
-},
+  charizard: {
+    keys: ["char", "chari", "zard", "charizard"],
+    respuesta: "👉 Cuidado con sol, usa Tyranitar para counter"
+  },
   sneasler: {
+    keys: ["snea", "sneas", "sneasler"],
     respuesta: "👉 Muy rápido, presión inmediata o Fake Out"
   },
   sinistcha: {
+    keys: ["sini", "sinis", "sinistcha"],
     respuesta: "👉 Difícil de bajar, juega posicionamiento"
   },
   gengar: {
+    keys: ["geng", "genga", "gengar"],
     respuesta: "👉 Muy ofensivo, cuidado con KO rápido"
   },
   floette: {
+    keys: ["floe", "floet", "floette"],
     respuesta: "👉 Mucho daño especial, usa resistencia"
   },
   tyranitar: {
+    keys: ["tyra", "tyran", "ttar", "tyranitar"],
     respuesta: "👉 Cambia clima y aguanta mucho"
   },
   pelipper: {
+    keys: ["peli", "pelip", "pelipper"],
     respuesta: "👉 Activa lluvia, cuidado con boosts"
   },
   garchomp: {
+    keys: ["garch", "chomp", "garchomp"],
     respuesta: "👉 Spread damage, cuidado con terremoto"
   }
 };
