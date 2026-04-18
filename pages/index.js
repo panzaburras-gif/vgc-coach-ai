@@ -1,212 +1,181 @@
 import { useState } from "react";
 
 const POKEMON = [
-  "incineroar","rotom","tyranitar","aegislash","kommoo","floette",
-  "whimsicott","sneasler","charizard","pelipper"
+  "incineroar","rotom","tyranitar","aegislash","kommo-o","floette",
+  "whimsicott","tornadus","charizard","pelipper","sneasler","chien-pao",
+  "flutter-mane","iron-hands","garchomp","dragonite","kingambit",
+  "ursaluna","amoonguss","cresselia","heatran","landorus-therian",
+  "urshifu-rapid-strike","urshifu-single-strike"
 ];
 
 const getSprite = (name) =>
   `https://img.pokemondb.net/sprites/home/normal/${name}.png`;
 
+// 🔥 TU EQUIPO REAL
+const MIS_SETS = {
+  incineroar: ["fake out", "parting shot", "flare blitz"],
+  rotom: ["electroweb", "hydro pump", "volt switch"],
+  tyranitar: ["rock slide", "knock off"],
+  aegislash: ["shadow sneak", "iron head", "king's shield"],
+  "kommo-o": ["clangorous soul", "aura sphere"],
+  floette: ["moonblast"]
+};
+
+function obtenerMovimientos(p) {
+  return MIS_SETS[p] || ["attack"];
+}
+
+// 🧠 LECTURA RIVAL
+function analizarEquipoRival(equipo) {
+  if (equipo.includes("whimsicott") || equipo.includes("tornadus")) return "speed_control";
+  if (equipo.includes("charizard")) return "sun";
+  if (equipo.includes("pelipper")) return "rain";
+  if (equipo.includes("sneasler") || equipo.includes("chien-pao")) return "hyper";
+  return "standard";
+}
+
+// 🎯 WIN CONDITION
+function detectarWinCondition(equipo) {
+  if (equipo.includes("charizard")) return { objetivo: "charizard" };
+  if (equipo.includes("sneasler")) return { objetivo: "sneasler" };
+  if (equipo.includes("pelipper")) return { objetivo: "pelipper" };
+  return { objetivo: equipo[0] };
+}
+
+// 🎯 LEADS
+function elegirLeads(mi) {
+  return mi.slice(0, 2);
+}
+
+// 💥 KO CHECK
+function calcularKO(miEquipo, target) {
+  const mapa = {
+    rotom: ["charizard","pelipper"],
+    tyranitar: ["charizard"],
+    aegislash: ["flutter-mane","sneasler"],
+    floette: ["garchomp"]
+  };
+
+  let puede = false;
+  miEquipo.forEach(p => {
+    if (mapa[p]?.includes(target)) puede = true;
+  });
+
+  return puede;
+}
+
+// 🎮 JUGADA EXACTA
+function jugadaExacta(leads, target, turno) {
+  return leads.map(p => {
+    const moves = obtenerMovimientos(p);
+
+    if (moves.includes("fake out") && turno === 1)
+      return `${p}: fake out → ${target}`;
+
+    if (moves.includes("electroweb"))
+      return `${p}: electroweb`;
+
+    return `${p}: ${moves[0]} → ${target}`;
+  });
+}
+
+// 📊 ESTADO COMBATE
+function evaluarEstado(vidasMias, vidasRival) {
+  if (vidasMias > vidasRival) return "ventaja";
+  if (vidasMias < vidasRival) return "desventaja";
+  return "igualado";
+}
+
+// 🎯 LÍNEAS
+function generarLineas(puedeKO, target) {
+  return [
+    { tipo: "segura", accion: `presionar ${target}`, win: "70%" },
+    { tipo: "agresiva", accion: `doble target ${target}`, win: puedeKO ? "85%" : "50%" },
+    { tipo: "defensiva", accion: "reposicionar", win: "60%" }
+  ];
+}
+
 export default function Home() {
-  const [miSeleccion, setMiSeleccion] = useState([]);
-  const [rivalSeleccion, setRivalSeleccion] = useState([]);
+
+  const [miSeleccion, setMi] = useState([]);
+  const [rivalSeleccion, setRival] = useState([]);
   const [turno, setTurno] = useState(1);
-  const [jugadaUsuario, setJugadaUsuario] = useState("");
   const [resultado, setResultado] = useState("");
+  const [evento, setEvento] = useState("");
+  const [vidasMias, setVidasMias] = useState(4);
+  const [vidasRival, setVidasRival] = useState(4);
 
-  function toggleSeleccion(nombre, lado) {
+  function toggle(p, lado) {
     if (lado === "mio") {
-      setMiSeleccion(prev =>
-        prev.includes(nombre)
-          ? prev.filter(p => p !== nombre)
-          : [...prev, nombre].slice(0, 4)
-      );
+      setMi(prev => prev.includes(p) ? prev.filter(x=>x!==p) : [...prev,p].slice(0,4));
     } else {
-      setRivalSeleccion(prev =>
-        prev.includes(nombre)
-          ? prev.filter(p => p !== nombre)
-          : [...prev, nombre].slice(0, 4)
-      );
+      setRival(prev => prev.includes(p) ? prev.filter(x=>x!==p) : [...prev,p].slice(0,4));
     }
-  }
-
-  function detectarCore(equipo) {
-    if (equipo.includes("whimsicott") && equipo.includes("charizard")) return "tailwind_sun";
-    if (equipo.includes("pelipper")) return "rain";
-    if (equipo.includes("sneasler")) return "hyper";
-    return "standard";
-  }
-
-  function elegirLeads(core) {
-    if (core === "tailwind_sun") return ["incineroar", "rotom"];
-    if (core === "rain") return ["rotom", "tyranitar"];
-    if (core === "hyper") return ["incineroar", "aegislash"];
-    return ["incineroar", "rotom"];
-  }
-
-  function decidir(core, turno) {
-
-    if (core === "tailwind_sun") {
-      if (turno === 1) return "Fake Out Whimsicott + Electroweb";
-      if (turno === 2) return "Switch a Tyranitar";
-      return "KO Charizard";
-    }
-
-    if (core === "hyper") {
-      if (turno === 1) return "Fake Out Sneasler";
-      if (turno === 2) return "Posicionamiento defensivo";
-      return "Doble target";
-    }
-
-    if (core === "rain") {
-      if (turno === 1) return "Electroweb";
-      if (turno === 2) return "Tyranitar in";
-      return "Presión eléctrica";
-    }
-
-    if (turno === 1) return "Fake Out + control";
-    if (turno === 2) return "Posicionamiento";
-    return "Presión ofensiva";
-  }
-
-  function predecirRival(core, turno) {
-
-    if (core === "tailwind_sun") {
-      if (turno === 1) return "Tailwind + posible Protect Charizard";
-      if (turno === 2) return "Ataque bajo sol";
-      return "Ofensiva total";
-    }
-
-    if (core === "hyper") {
-      if (turno === 1) return "Ataque rápido de Sneasler";
-      return "Presión continua";
-    }
-
-    if (core === "rain") {
-      if (turno === 1) return "Activar lluvia + ataque agua";
-      return "Spam agua";
-    }
-
-    return "Juego estándar";
-  }
-
-  function alertaError(core, turno, jugada) {
-    const j = jugada.toLowerCase();
-
-    if (core === "tailwind_sun" && turno === 1 && !j.includes("fake")) {
-      return "🚨 ERROR: debes frenar Tailwind";
-    }
-
-    if (core === "hyper" && turno === 1 && !j.includes("fake")) {
-      return "🚨 ERROR: Sneasler te puede destrozar";
-    }
-
-    if (core === "rain" && turno === 2 && !j.includes("tyranitar")) {
-      return "🚨 ERROR: no quitaste lluvia";
-    }
-
-    return "✅ Bien jugado";
   }
 
   function analizar() {
-    const core = detectarCore(rivalSeleccion);
-    const leads = elegirLeads(core);
-    const jugada = decidir(core, turno);
-    const pred = predecirRival(core, turno);
-    const error = alertaError(core, turno, jugadaUsuario);
+
+    const estilo = analizarEquipoRival(rivalSeleccion);
+    const leads = elegirLeads(miSeleccion);
+    const win = detectarWinCondition(rivalSeleccion);
+    const puedeKO = calcularKO(miSeleccion, win.objetivo);
+    const jugada = jugadaExacta(leads, win.objetivo, turno);
+    const estado = evaluarEstado(vidasMias, vidasRival);
+    const lineas = generarLineas(puedeKO, win.objetivo);
 
     setResultado(`
-🎯 LEADS:
-${leads[0]} + ${leads[1]}
+🧠 Rival: ${estilo}
 
-🎮 TURNO ${turno}
+🎯 Target: ${win.objetivo}
 
-🧠 Rival:
-${pred}
+💥 KO: ${puedeKO ? "posible" : "no"}
 
-🎯 Tu jugada:
-${jugada}
+📊 Estado: ${estado}
 
-📊 Evaluación:
-${error}
+🎮 Jugada:
+${jugada.map(j=>`👉 ${j}`).join("\n")}
+
+📊 Opciones:
+${lineas.map(l=>`${l.tipo}: ${l.accion} (${l.win})`).join("\n")}
 `);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-black text-white p-4 flex items-center justify-center">
-      <div className="w-full max-w-md bg-[#111827]/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-purple-500/20">
+    <div className="min-h-screen bg-[#0f172a] text-white p-4">
 
-        <h1 className="text-2xl font-bold text-center mb-4">
-          ⚡ VGC Coach PRO
-        </h1>
+      <h1 className="text-3xl text-center mb-4">⚡ VGC Coach PRO</h1>
 
-        <h2 className="mb-2 text-sm opacity-70">🧍 Tu equipo</h2>
-        <div className="grid grid-cols-5 gap-2 mb-4">
-          {POKEMON.map(p => (
-            <img
-              key={p}
-              src={getSprite(p)}
-              onClick={() => toggleSeleccion(p, "mio")}
-              className={`cursor-pointer rounded-xl p-1 transition ${
-                miSeleccion.includes(p)
-                  ? "bg-green-500 scale-110"
-                  : "bg-gray-800 hover:scale-105"
-              }`}
-            />
-          ))}
-        </div>
-
-        <h2 className="mb-2 text-sm opacity-70">👁️ Rival</h2>
-        <div className="grid grid-cols-5 gap-2 mb-4">
-          {POKEMON.map(p => (
-            <img
-              key={p}
-              src={getSprite(p)}
-              onClick={() => toggleSeleccion(p, "rival")}
-              className={`cursor-pointer rounded-xl p-1 transition ${
-                rivalSeleccion.includes(p)
-                  ? "bg-red-500 scale-110"
-                  : "bg-gray-800 hover:scale-105"
-              }`}
-            />
-          ))}
-        </div>
-
-        <input
-          placeholder="Qué vas a hacer (ej: fake out whim)"
-          onChange={(e) => setJugadaUsuario(e.target.value)}
-          className="w-full p-2 mb-3 rounded bg-black border border-gray-700"
-        />
-
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setTurno(t => t + 1)}
-            className="w-1/2 bg-gray-800 p-2 rounded-xl"
-          >
-            ➕ Turno
-          </button>
-
-          <button
-            onClick={() => setTurno(1)}
-            className="w-1/2 bg-gray-800 p-2 rounded-xl"
-          >
-            🔄 Reset
-          </button>
-        </div>
-
-        <button
-          onClick={analizar}
-          className="w-full bg-purple-600 p-3 rounded-xl font-bold mb-4 hover:bg-purple-500 transition"
-        >
-          ⚡ Calcular jugada
-        </button>
-
-        <div className="bg-black/60 p-4 rounded-xl min-h-[160px] border border-gray-700">
-          <pre className="text-sm whitespace-pre-wrap">{resultado}</pre>
-        </div>
-
+      <h2>Tu equipo</h2>
+      <div className="grid grid-cols-6 gap-2">
+        {POKEMON.map(p => (
+          <img key={p} src={getSprite(p)}
+            onClick={()=>toggle(p,"mio")}
+            className={`cursor-pointer p-1 ${miSeleccion.includes(p)?"bg-green-500":"bg-gray-800"}`}
+          />
+        ))}
       </div>
+
+      <h2>Rival</h2>
+      <div className="grid grid-cols-6 gap-2">
+        {POKEMON.map(p => (
+          <img key={p} src={getSprite(p)}
+            onClick={()=>toggle(p,"rival")}
+            className={`cursor-pointer p-1 ${rivalSeleccion.includes(p)?"bg-red-500":"bg-gray-800"}`}
+          />
+        ))}
+      </div>
+
+      <input placeholder="Evento turno"
+        onChange={e=>setEvento(e.target.value)}
+        className="w-full p-2 mt-3 bg-black"/>
+
+      <div className="flex gap-2 mt-2">
+        <button onClick={()=>setTurno(turno+1)}>Turno+</button>
+        <button onClick={analizar}>Analizar</button>
+      </div>
+
+      <pre className="mt-4 bg-black p-4">{resultado}</pre>
+
     </div>
   );
 }
