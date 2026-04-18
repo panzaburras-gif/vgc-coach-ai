@@ -52,22 +52,61 @@ export default function Home() {
   const [resultado, setResultado] = useState("");
 
 function analizar() {
-  const r = rival.toLowerCase().replace(/\s/g, "");
+  const palabras = rival.toLowerCase().split(" ");
 
-  // 1. Primero intenta detectar por "keys" (rápido y fiable)
-  for (let poke in meta) {
-    const data = meta[poke];
+  let detectados = [];
 
-    if (data.keys) {
-      for (let key of data.keys) {
-        if (r.includes(key)) {
-          setResultado(data.respuesta);
-          return;
+  for (let palabra of palabras) {
+    let mejorMatch = null;
+    let mejorScore = 0;
+
+    for (let poke in meta) {
+      const data = meta[poke];
+
+      // keys rápidas
+      for (let key of data.keys || []) {
+        if (palabra.includes(key)) {
+          mejorMatch = poke;
+          mejorScore = 1;
         }
       }
+
+      // similitud
+      const score = similitud(palabra, poke);
+      if (score > mejorScore) {
+        mejorScore = score;
+        mejorMatch = poke;
+      }
+    }
+
+    if (mejorMatch && !detectados.includes(mejorMatch)) {
+      detectados.push(mejorMatch);
     }
   }
 
+  const p1 = detectados[0];
+  const p2 = detectados[1];
+
+  if (
+    (p1 === "charizard" && p2 === "whimsicott") ||
+    (p2 === "charizard" && p1 === "whimsicott")
+  ) {
+    setResultado("👉 Lead: Tyranitar + Rotom | evita Tailwind");
+    return;
+  }
+
+  if (p1 === "sneasler" || p2 === "sneasler") {
+    setResultado("👉 Incineroar lead | Fake Out turno 1");
+    return;
+  }
+
+  if (p1 === "pelipper" || p2 === "pelipper") {
+    setResultado("👉 Rotom + Tyranitar | cambia clima");
+    return;
+  }
+
+  setResultado("👉 Incineroar + Rotom | juego estándar");
+}
   // 2. Si no encuentra nada → usa similitud (IA)
   let mejorMatch = null;
   let mejorScore = 0;
