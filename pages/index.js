@@ -87,7 +87,7 @@ function analizar() {
    if (mejorMatch && !detectados.includes(mejorMatch)) {
   detectados.push(mejorMatch);
 }
-    detectados = detectados.slice(0, 2);
+   detectados = detectados.slice(0, 4);
   }
 
   const p1 = detectados[0];
